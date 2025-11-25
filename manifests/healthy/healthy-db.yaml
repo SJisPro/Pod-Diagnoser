@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: healthy-db
+  labels:
+    app: healthy-db
+spec:
+  containers:
+  - name: db
+    image: busybox
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      while true; do
+        echo "DB: Connection stable";
+        echo "DB: Executed 4 queries in last cycle";
+        sleep 6;
+      done;

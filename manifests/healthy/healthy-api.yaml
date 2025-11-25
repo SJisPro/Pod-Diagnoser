@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: healthy-api
+  labels:
+    app: healthy-api
+spec:
+  containers:
+  - name: api
+    image: busybox
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      while true; do
+        echo "INFO: API request handled successfully";
+        echo "INFO: Response time 123ms";
+        sleep 5;
+      done;

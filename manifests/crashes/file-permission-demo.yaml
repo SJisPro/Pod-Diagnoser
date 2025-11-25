@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: file-permission-demo
+spec:
+  containers:
+    - name: perm-error
+      image: busybox
+      command: ["sh", "-c", "touch /readonly/file.txt || echo 'Permission denied writing to file' && sleep 5"]
+      volumeMounts:
+        - name: readonly-vol
+          mountPath: /readonly
+          readOnly: true
+  volumes:
+    - name: readonly-vol
+      emptyDir: {}

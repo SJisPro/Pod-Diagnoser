@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: react-app
+  namespace: team-app1
+  labels:
+    app: react-app
+spec:
+  containers:
+    - name: react-app
+      image: nginx:stable-alpine
+      ports:
+        - containerPort: 80
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo "<h1>React App Placeholder - Running</h1>" > /usr/share/nginx/html/index.html;
+          echo "React placeholder started.";
+          tail -f /dev/null;
+  restartPolicy: Always

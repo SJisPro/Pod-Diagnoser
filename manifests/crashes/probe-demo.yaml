@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probe-failure-demo
+spec:
+  containers:
+    - name: probe-failure
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          echo "Starting probe failure demo..."
+          # Just sleep and do nothing useful
+          sleep 3600
+
+      # Intentionally wrong probes: HTTP check on a port where nothing is listening
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3

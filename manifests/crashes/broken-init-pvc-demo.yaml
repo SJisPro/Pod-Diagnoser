@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broken-init-pvc-demo
+  labels:
+    app: test-diagnostics
+spec:
+  # ❌ Missing PVC — will cause a mount error
+  volumes:
+    - name: missing-data
+      persistentVolumeClaim:
+        claimName: non-existent-pvc
+
+  initContainers:
+    - name: init-check
+      image: busybox
+      command:
+        # ❌ Intentional failure
+        - sh
+        - -c
+        - |
+          echo "Running init container checks..."
+          echo "ERROR: Required configuration file missing!"
+          exit 1
+
+  containers:
+    - name: main-app
+      image: busybox
+      command:
+        - sh
+        - -c
+        - |
+          echo "Starting main application..."
+          echo "ERROR: Unable to connect to database."
+          sleep 3600
+      volumeMounts:
+        - mountPath: /app/data
+          name: missing-data  # ❌ Will fail because PVC doesn't exist
+
+  restartPolicy: Always

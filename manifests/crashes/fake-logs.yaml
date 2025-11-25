@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fake-logs-demo
+spec:
+  containers:
+  - name: logger
+    image: busybox
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      while true; do
+        echo "ERROR: Unable to reach API server";
+        echo "WARNING: Disk usage high";
+        echo "INFO: routine check running...";
+        sleep 5;
+      done;

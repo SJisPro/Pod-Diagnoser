@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagepull-demo
+spec:
+  containers:
+  - name: badimg
+    image: nonexistent.registry.com/myimage:latest

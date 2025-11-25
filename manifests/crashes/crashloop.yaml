@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: crashloop-demo
+spec:
+  containers:
+  - name: crash
+    image: busybox
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting application..."
+        echo "Simulated startup failure"
+        sleep 2
+        exit 1
