@@ -3,8 +3,21 @@ import streamlit as st
 from diagnostics import diagnose_pod
 from kubernetes import client, config
 from kubernetes.config.kube_config import list_kube_config_contexts
+from llm_groq import ask_groq_llm
 import json
 import re
+
+if "ai_chat" not in st.session_state:
+    st.session_state.ai_chat = []
+
+
+# Prevent re-diagnosis on AI questions
+if "diagnosis_result" not in st.session_state:
+    st.session_state.diagnosis_result = None
+
+if "last_diagnosed_pod" not in st.session_state:
+    st.session_state.last_diagnosed_pod = None
+
 
 # Helper: Parse Kubernetes APIException into structured format
 def parse_k8s_api_error(error_string):
@@ -188,21 +201,6 @@ st.sidebar.caption("Pick the pod you want to diagnose")
 clicked_pod = None if selected_pod == "-- Select a Pod --" else selected_pod
 
 
-# Chat session handling
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-
-# Remove invalid placeholder messages
-st.session_state.messages = [m for m in st.session_state.messages if m.get("content") not in (None, "None")]
-
-
-# Render chat history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"], unsafe_allow_html=True)
-
-
 # Auto-fill logic for pod name
 if "pending_input" not in st.session_state:
     st.session_state.pending_input = ""
@@ -210,8 +208,7 @@ if "pending_input" not in st.session_state:
 if clicked_pod and st.session_state.pending_input != clicked_pod:
     st.session_state.pending_input = clicked_pod
 
-user_input = st.chat_input("Enter Pod name to diagnose...")
-prompt = user_input if user_input else st.session_state.pending_input
+prompt = st.session_state.pending_input.strip()
 
 
 # Only allow diagnosis when cluster, namespace and pod are selected
@@ -221,27 +218,37 @@ can_diagnose = (
     and prompt not in ("", None, "-- Select a Pod --")
 )
 
+if prompt and prompt != st.session_state.last_diagnosed_pod:
+    st.session_state.diagnosis_result = None
+    st.session_state.ai_chat = []
+
+
 # Run diagnostics
-if can_diagnose:
-    st.session_state.messages.append({"role": "user", "content": prompt})
+if can_diagnose and st.session_state.last_diagnosed_pod != prompt and st.session_state.diagnosis_result is None:
+
+    st.session_state.last_diagnosed_pod = prompt
+
+    try:
+        result = diagnose_pod(v1_for_selected, prompt.strip(), namespace)
+        st.session_state.diagnosis_result = result
+    except Exception as e:
+        err_html = f"<p style='color:red;'>Error: {e}</p>"
+        st.error(f"Error: {e}")
+        st.session_state.messages.append({"role": "assistant", "content": err_html})
+        st.stop()
+
+
+# 2. Render UI ONLY IF we already have a diagnosis
+if st.session_state.diagnosis_result is not None:
+    result = st.session_state.diagnosis_result
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
+
         with st.spinner("Analyzing pod…"):
-            # call diagnose_pod with the selected cluster client
-            try:
-                result = diagnose_pod(v1_for_selected, prompt.strip(), namespace)
-            except Exception as e:
-                # Unexpected error from diagnose_pod
-                err_html = f"<p style='color:red;'>Error: {e}</p>"
-                st.error(f"Error: {e}")
-                st.session_state.messages.append({"role": "assistant", "content": err_html})
-                st.stop()
 
-
-            # SUMMARY card
             st.markdown(f"""
             <div class="card">
                 <h3>Summary</h3>
@@ -249,7 +256,6 @@ if can_diagnose:
             </div>
             """, unsafe_allow_html=True)
 
-            # LIKELY CAUSE card
             st.markdown(f"""
             <div class="card">
                 <h3>Likely Cause</h3>
@@ -260,79 +266,55 @@ if can_diagnose:
 
             # STRUCTURED EVIDENCE
             evidence = result.get("evidence", {})
-    
+
             with st.expander("Evidence Details", expanded=True):
 
-                # CASE 1: evidence is API error string or description text
                 if isinstance(evidence, str):
-
                     if "HTTP response body:" in evidence:
                         st.markdown("### Kubernetes API Error")
-
                         parsed = parse_k8s_api_error(evidence)
 
-                        # Keys to hide in API error view
                         excluded_keys = {"kind", "apiVersion", "metadata", "code"}
 
                         for key, value in parsed.items():
-
                             if key in excluded_keys:
-                                continue  # skip unwanted fields
-
+                                continue
                             label = key.replace("_", " ").title()
 
                             if isinstance(value, dict):
-                                if value:   # only show if dict has content
+                                if value:
                                     st.markdown(f"**{label}:**")
                                     st.code(json.dumps(value, indent=2))
                             else:
                                 st.markdown(f"**{label}:** {value}")
-
-
                     else:
                         st.markdown("### Pod Description Analysis")
-                        st.markdown("We detected possible errors inside the Pod's description.")
-                        st.code(evidence) 
+                        st.code(evidence)
 
-
-                # CASE 2: evidence is list (logs/events)
                 elif isinstance(evidence, list):
                     st.markdown("**Logs / Events:**")
                     st.code("\n".join([str(x) for x in evidence]))
-                    
 
-                # CASE 3: evidence is dict (existing logic)
                 elif isinstance(evidence, dict):
-
                     for key, value in evidence.items():
-
                         if key == "last_logs":
                             continue
-
                         label = key.replace("_", " ").title()
 
                         if isinstance(value, list):
                             st.markdown(f"**{label}:**")
                             for item in value:
                                 st.markdown(f"- {item}")
-
                         else:
                             st.markdown(f"**{label}:** {value}")
-
-
-                # CASE 4: fallback
                 else:
                     st.write("No evidence available.")
 
 
-
-            # LAST LOGS
             if isinstance(evidence, dict) and "last_logs" in evidence:
                 with st.expander("Latest Logs"):
                     st.code("\n".join(evidence["last_logs"]))
 
-
-            # Recommendation card
             st.markdown(f"""
             <div class="card" style="background-color:#1E3A8A; border-color:#3B82F6; color:#F3F4F6;">
                 <h3 style="color:#fff;">Recommendation</h3>
@@ -341,17 +323,33 @@ if can_diagnose:
             """, unsafe_allow_html=True)
 
 
-            # Build compact HTML for chat history
-            compact_html = f"""
-            <p><b>Summary:</b> {result.get("summary","")}</p>
-            <p><b>Likely Cause:</b> {result.get("likely_cause","")}</p>
-            <p><b>Recommendation:</b> {result.get("recommendation", "")}</p>
-            """
 
+    # --- Main AI Chat Input at Bottom ---
+    for chat in st.session_state.ai_chat:
+        with st.chat_message("user"):
+            st.markdown(chat["question"])
+        with st.chat_message("assistant"):
+            st.markdown(chat["answer"])
 
-            # Save structured summary into chat history
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": compact_html
-            })
+    ai_user_message = st.chat_input("Ask me anything about this pod — its status, health, performance, or ways to improve it...")
+
+    if ai_user_message:
+        with st.chat_message("user"):
+            st.markdown(ai_user_message)
+
+        with st.spinner("AI is thinking..."):
+            ai_reply = ask_groq_llm(
+                summary=st.session_state.diagnosis_result.get("summary"),
+                cause=st.session_state.diagnosis_result.get("likely_cause"),
+                recommendation=st.session_state.diagnosis_result.get("recommendation"),
+                user_question=ai_user_message
+            )
+
+        with st.chat_message("assistant"):
+            st.markdown(ai_reply)
+
+        st.session_state.ai_chat.append({
+            "question": ai_user_message,
+            "answer": ai_reply
+        })
 
