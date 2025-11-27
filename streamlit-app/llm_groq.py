@@ -28,7 +28,7 @@ Rules:
 """
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # Fast, reliable for chat
+        model="llama-3.3-70b-versatile",
         max_tokens=250,
         temperature=0.3,
         messages=[

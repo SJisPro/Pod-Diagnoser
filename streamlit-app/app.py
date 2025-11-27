@@ -1,4 +1,3 @@
-# Newer version of the app.py file
 import streamlit as st
 from diagnostics import diagnose_pod
 from kubernetes import client, config
@@ -238,7 +237,7 @@ if can_diagnose and st.session_state.last_diagnosed_pod != prompt and st.session
         st.stop()
 
 
-# 2. Render UI ONLY IF we already have a diagnosis
+# Render UI ONLY IF we already have a diagnosis
 if st.session_state.diagnosis_result is not None:
     result = st.session_state.diagnosis_result
 
@@ -323,8 +322,7 @@ if st.session_state.diagnosis_result is not None:
             """, unsafe_allow_html=True)
 
 
-
-    # --- Main AI Chat Input at Bottom ---
+    # LLM integration code
     for chat in st.session_state.ai_chat:
         with st.chat_message("user"):
             st.markdown(chat["question"])
