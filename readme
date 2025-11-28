@@ -1,152 +1,133 @@
-# Kubernetes Pod Diagnostics System (AI-Powered)
+# Kubernetes Pod Diagnostics System 🛠️🤖
 
-## 📌 Project Overview
+## Overview
 
-The **Kubernetes Pod Diagnostics System** is an intelligent web-based troubleshooting assistant designed to automatically analyze and diagnose Kubernetes Pod failures.
-It eliminates the need for manual `kubectl` debugging by providing real-time, human-readable explanations and actionable recommendations through an interactive chatbot interface.
+The **Kubernetes Pod Diagnostics System** is an intelligent web-based tool that analyzes Kubernetes pods and provides clear, structured diagnostics along with AI-powered explanations. It combines Kubernetes API-driven analysis with a conversational Large Language Model (LLM) to make pod troubleshooting faster, simpler, and more intuitive.
 
-This system is built to assist DevOps engineers and Kubernetes administrators in quickly identifying the root cause of pod failures such as CrashLoopBackOff, ImagePullBackOff, DNS failures, scheduling issues, resource exhaustion, and more.
+This system helps users:
 
----
-
-## 🎯 Key Objectives
-
-* Simplify Kubernetes debugging for students and DevOps engineers
-* Reduce Mean Time To Resolution (MTTR)
-* Automate root-cause analysis of pod failures
-* Provide user-friendly error explanations
-* Support real-time Kubernetes cluster inspection
+* Diagnose failing or unstable pods
+* Understand root causes in plain language
+* Interactively discuss issues with an AI assistant
+* Receive actionable remediation steps
 
 ---
 
-## 🧠 Core Features
+## Key Features
 
-✅ Intelligent Pod Failure Diagnosis
-✅ Real-time Kubernetes Event & Log Analysis
-✅ Cluster-Aware UI Dashboard
-✅ Human-readable error explanations
-✅ CrashLoopBackOff root cause detection
-✅ DNS, Network, Permission & Resource error detection
-✅ Health probe failure analysis
-✅ Ignore noisy external scan logs
-✅ Kubernetes Context Switcher
-✅ Clean Dark-Themed Interface
+### ✅ Real-time Pod Diagnostics
+
+* Fetches live pod data using Kubernetes Python client
+* Analyzes status, events, and logs
+* Identifies common issues like:
+
+  * CrashLoopBackOff
+  * ImagePullBackOff
+  * Pending / Scheduling failures
+  * Network connectivity errors
+
+### 🤖 AI-Powered Explanations (Groq LLM)
+
+* Integrated Groq Cloud LLM for conversational troubleshooting
+* Users can ask follow-up questions such as:
+
+  * "Why is this pod failing?"
+  * "How can I fix this issue?"
+  * "Is this problem critical?"
+* AI responses are contextual, based on real diagnostic results
+
+### 🎯 Smart State Management
+
+* Diagnosis runs only once per pod
+* AI chat continues without re-triggering diagnostics
+* Switching pods resets chat automatically for clean flow
+
+### 🌙 Professional Dark UI
+
+* Modern, minimal, Kubernetes-inspired layout
+* Streamlit-based responsive interface
+* Sidebar-driven cluster → namespace → pod selection
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 User Interface (Streamlit)
         ↓
-Kubernetes Cluster Selection
+Pod Selection
         ↓
-Kubernetes Python Client (CoreV1API)
+Diagnostics Engine (Kubernetes API)
         ↓
-Rule-Based Diagnostics Engine
+Structured Analysis Output
         ↓
-Error Classification + Remediation
+LLM (Groq Cloud)
+        ↓
+Conversational AI Explanations
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Layer               | Technology              |
-| ------------------- | ----------------------- |
-| Frontend UI         | Streamlit               |
-| Backend Engine      | Python                  |
-| Kubernetes API      | kubernetes-client       |
-| Styling             | Custom CSS (Dark Theme) |
-| Cluster Interaction | kubeconfig contexts     |
-| Diagnostics         | Rule-based AI logic     |
+| Layer                  | Technology                           |
+| ---------------------- | ------------------------------------ |
+| Frontend               | Streamlit                            |
+| Backend                | Python                               |
+| Kubernetes Integration | Kubernetes Python Client             |
+| LLM Provider           | Groq Cloud                           |
+| AI Model Usage         | Contextual Troubleshooting Assistant |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
-project-root/
+Kubernetes-Pod-Diagnostics/
 │
-├── app.py                # Streamlit UI application
-├── diagnostics.py        # Core diagnostics logic
+├── app.py                # Main Streamlit application
+├── diagnostics.py        # Core diagnostic logic
+├── llm_groq.py           # Groq LLM integration
 ├── requirements.txt      # Python dependencies
-├── manifests/            # Kubernetes YAML files
-│   ├── backend/
-│   ├── frontend/
-│   └── configs/
-├── screenshots/          # UI and demo images
+├── .env                  # Environment variables (API keys)
+├── .gitignore            # Git exclusions
 └── README.md             # Project documentation
 ```
 
 ---
 
-## ⚙️ How It Works
+## Setup Instructions
 
-1. Select Kubernetes Cluster
-2. Choose Namespace
-3. Select Pod
-4. Chatbot fetches:
-
-   * Pod Details
-   * Events
-   * Logs
-5. AI engine analyzes data
-6. System returns:
-
-   * Summary
-   * Likely Cause
-   * Evidence
-   * Recommendation
-
----
-
-## 🧪 Errors Detected
-
-| Error Type           | Detection |
-| -------------------- | --------- |
-| CrashLoopBackOff     | ✅         |
-| ImagePullBackOff     | ✅         |
-| DNS Failures         | ✅         |
-| OOMKilled            | ✅         |
-| FailedScheduling     | ✅         |
-| Probe Failures       | ✅         |
-| Permission Issues    | ✅         |
-| Network Timeouts     | ✅         |
-| External Bot Traffic | ✅ Ignored |
-
----
-
-## 🖥️ Screenshot Preview
-
-
-
----
-
-## 🚀 Installation & Setup
-
-### 1️⃣ Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/SJisPro/Pod-Diagnoser.git
-cd <your-repo-name>
+cd Kubernetes-Pod-Diagnostics-System
 ```
 
-### 2️⃣ Install Dependencies
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Configure Kubernetes Context
+### 3. Configure Environment Variables
 
-Ensure your kubeconfig is set:
+Create a `.env` file:
 
-```bash
-kubectl config get-contexts
+```env
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
-### 4️⃣ Run Application
+### 4. Ensure Kubernetes Config
+
+Make sure your kubeconfig is properly set:
+
+```bash
+kubectl config view
+```
+
+### 5. Run the Application
 
 ```bash
 streamlit run app.py
@@ -154,56 +135,69 @@ streamlit run app.py
 
 ---
 
-## 📊 Project Impact
+## How It Works
 
-* Diagnoses pod failures 4x faster than manual debugging
-* Reduces human error in diagnosis
-* Improves system observability
-* Ideal for enterprise DevOps environments
-* Enhances operational efficiency
+1. User selects Cluster → Namespace → Pod
+2. System analyzes the pod using Kubernetes APIs
+3. Results displayed as:
 
----
-
-## 🧩 Example Output
-
-**Summary:** Pod is repeatedly crashing
-**Likely Cause:** Container failed during initialization
-**Recommendation:** Review logs and startup configuration
+   * Summary
+   * Likely Cause
+   * Evidence
+   * Recommendation
+4. User can chat with AI for further clarification
+5. AI explains issues in natural language using stored diagnostics
 
 ---
 
-## 📈 Future Enhancements
+## Example Use Cases
 
-* 🤖 LLM-based intelligent suggestions
-* 📡 Slack / Teams notifications
-* 📥 Incident history storage
-* 🧠 Predictive failure analysis
-
----
-
-## 🎓 Developed For
-
-This project was developed as part of **CME Group Pre-Internship Training Program** evaluation.
+* Debugging crashing production pods
+* Training junior DevOps engineers
+* Understanding Kubernetes error patterns
+* Quick root cause analysis during incidents
 
 ---
 
-## 👨‍💻 Author
+## Performance Optimizations
+
+* ✅ Cached diagnostic results using Streamlit session state
+* ✅ LLM queries do not re-trigger diagnostics
+* ✅ Efficient cluster switching handling
+* ✅ Controlled AI output length for clarity
+
+---
+
+## Future Enhancements
+
+* Pod performance metrics visualization
+* Auto-suggested remediation automation
+* Export diagnostic reports (PDF)
+* Multi-pod health dashboard
+* Slack / Email alert integration
+
+---
+
+## Why This Project Stands Out
+
+* Combines DevOps automation with generative AI
+* Converts raw logs into human-friendly intelligence
+* Improves operational efficiency
+* Promotes AI-assisted infrastructure debugging
+
+---
+
+## Author
 
 **Samyak Jain**
-B.Tech Computer Science & Engineering
+B.Tech Computer Science Engineering
 SRM Institute of Science & Technology, Modinagar
-Email: [jainsamyakdelhi@gmail.com](mailto:jainsamyakdelhi@gmail.com)
+
 GitHub: [https://github.com/SJisPro](https://github.com/SJisPro)
+Project: Kubernetes Pod Diagnostics System
 
 ---
 
-## 📜 License
+## License
 
-This project is open-source for educational and research purposes.
-
----
-
-## ⭐ Support
-
-If you find this project useful, please star ⭐ the repository and share feedback!
-
+This project is for educational and research purposes under the CME Group Pre-Internship Training Program.
