@@ -329,18 +329,29 @@ if st.session_state.diagnosis_result is not None:
         with st.chat_message("assistant"):
             st.markdown(chat["answer"])
 
-    ai_user_message = st.chat_input("Ask AI anything about this pod...")
+    ai_user_message = st.chat_input(
+        "Ask me anything about this pod..."
+    )
 
     if ai_user_message:
         with st.chat_message("user"):
             st.markdown(ai_user_message)
+
+        # 🔹 Build cluster context for the LLM
+        cluster_context = {
+            "kube_context": selected_context,          # internal kube context name
+            "cluster_name": selected_cluster_display,  # nice label from dropdown
+            "namespace": namespace,
+            "pod_name": prompt
+        }
 
         with st.spinner("AI is thinking..."):
             ai_reply = ask_groq_llm(
                 summary=st.session_state.diagnosis_result.get("summary"),
                 cause=st.session_state.diagnosis_result.get("likely_cause"),
                 recommendation=st.session_state.diagnosis_result.get("recommendation"),
-                user_question=ai_user_message
+                cluster_context=cluster_context,        # ✅ new argument
+                user_question=ai_user_message,
             )
 
         with st.chat_message("assistant"):
